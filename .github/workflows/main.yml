@@ -44,7 +44,7 @@ jobs:
         echo "region = ${{ secrets.AWS_REGION }}" >> ~/.aws/config
 
     - name: Zip files for deployment
-      run: zip -r my-app.zip index.html appspec.yml before_install.sh after_install.sh scripts/
+      run: zip -r my-app.zip index.html index2.html appspec.yml before_install.sh after_install.sh scripts/
 
     - name: Upload to S3
       run: aws s3 cp my-app.zip s3://awscodedeploy12/my-app.zip
