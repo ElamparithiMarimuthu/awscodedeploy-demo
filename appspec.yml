@@ -1,7 +1,9 @@
 version: 0.0
 os: linux
 files:
-  - source: index.html index2.html
+  - source: index.html
+    destination: /var/www/html
+  - source: index2.html
     destination: /var/www/html
 hooks:
   BeforeInstall:
@@ -11,5 +13,6 @@ hooks:
   AfterInstall:
     - location: after_install.sh
       timeout: 300
-      runas: ubuntu 
+      runas: ubuntu
+
 
