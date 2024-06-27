@@ -1,0 +1,65 @@
+name: Deploy to AWS CodeDeploy
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to the branch you want to trigger the deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Update package lists
+      run: sudo apt-get update
+
+    - name: Install zip and unzip
+      run: sudo apt-get install zip unzip -y
+
+    - name: Install curl
+      run: sudo apt-get install curl -y
+
+    - name: Download AWS CLI v2
+      run: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+    - name: Unzip AWS CLI
+      run: unzip awscliv2.zip
+
+    - name: Install AWS CLI
+      run: sudo ./aws/install --update
+
+    - name: Verify AWS CLI installation
+      run: aws --version
+
+    - name: Configure AWS credentials
+      run: |
+        mkdir -p ~/.aws
+        echo "[default]" > ~/.aws/credentials
+        echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+        echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+        echo "[default]" > ~/.aws/config
+        echo "region = ${{ secrets.AWS_REGION }}" >> ~/.aws/config
+
+    - name: Zip files for deployment
+      run: zip -r my-app.zip index.html appspec.yml before_install.sh after_install.sh scripts/
+
+    - name: Upload to S3
+      run: aws s3 cp my-app.zip s3://awscodedeploy12/my-app.zip
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    - name: Create CodeDeploy deployment
+      run: |
+        aws deploy create-deployment \
+          --application-name Awscodedeploy-Github \
+          --deployment-group-name Codedeploy-github \
+          --s3-location bucket=awscodedeploy12,key=my-app.zip,bundleType=zip
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
